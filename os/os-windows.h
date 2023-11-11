@@ -31,6 +31,7 @@
 #define FIO_HAVE_CPU_AFFINITY
 #define FIO_HAVE_CHARDEV_SIZE
 #define FIO_HAVE_GETTID
+#define FIO_HAVE_NATIVE_FALLOCATE
 #define FIO_EMULATED_MKDIR_TWO
 
 #define FIO_PREFERRED_ENGINE		"windowsaio"
@@ -217,6 +218,18 @@ static inline int fio_mkdir(const char *path, mode_t mode) {
 	}
 
 	return 0;
+}
+
+static inline bool fio_fallocate(struct fio_file *f, uint64_t offset, uint64_t len)
+{
+	FILE_ALLOCATION_INFO ai;
+	HANDLE hFile;
+
+	hFile = (HANDLE)_get_osfhandle(f->fd);
+
+	ai.AllocationSize.QuadPart = offset + len;
+
+	return SetFileInformationByHandle(hFile, FileAllocationInfo, &ai, sizeof(ai));
 }
 
 int first_set_cpu(os_cpu_mask_t *cpumask);
