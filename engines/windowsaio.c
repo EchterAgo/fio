@@ -207,6 +207,7 @@ static int fio_windowsaio_open_file(struct thread_data *td, struct fio_file *f)
 	DWORD sharemode = FILE_SHARE_READ | FILE_SHARE_WRITE;
 	DWORD openmode = OPEN_ALWAYS;
 	DWORD access;
+	FILE_ALLOCATION_INFO ai;
 
 	dprint(FD_FILE, "fd open %s\n", f->file_name);
 
@@ -282,6 +283,12 @@ static int fio_windowsaio_open_file(struct thread_data *td, struct fio_file *f)
 			log_err("windowsaio: failed to create io completion port\n");
 			rc = 1;
 		}
+	}
+
+	if (td->o.fallocate_mode == FIO_FALLOCATE_NATIVE) {
+		/* Preallocation needs to happen after file open */
+		ai.AllocationSize.QuadPart = f->real_file_size;
+		SetFileInformationByHandle(f->hFile, FileAllocationInfo, &ai, sizeof(ai));
 	}
 
 	return rc;
